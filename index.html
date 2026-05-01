@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Game Lompat Kotak!</title>
+    <style>
+        body { text-align: center; font-family: Arial; background-color: #222; color: white; }
+        #gameCanvas {
+            border: 5px solid white;
+            background-color: #fff;
+            display: block;
+            margin: 20px auto;
+        }
+        h1 { color: #00d4ff; }
+    </style>
+</head>
+<body onclick="lompat()">
+
+    <h1>Lompat Lewati Rintangan!</h1>
+    <p>Klik layar atau tekan tombol apa saja untuk melompat</p>
+    <canvas id="gameCanvas" width="600" height="200"></canvas>
+    <h2 id="skor-teks">Skor: 0</h2>
+
+    <script>
+        var canvas = document.getElementById("gameCanvas");
+        var ctx = canvas.getContext("2d");
+
+        // Data Karakter (Kotak Biru)
+        var pemain = { x: 50, y: 150, lebar: 30, tinggi: 30, loncat: false, gravitasi: 2 };
+        
+        // Data Rintangan (Kotak Merah)
+        var musuh = { x: 600, y: 160, lebar: 20, tinggi: 40, kecepatan: 5 };
+        
+        var skor = 0;
+        var gameSelesai = false;
+
+        function update() {
+            if (gameSelesai) return;
+
+            // Gerakkan musuh ke kiri
+            musuh.x -= musuh.kecepatan;
+            if (musuh.x < -20) {
+                musuh.x = 600;
+                skor++;
+                document.getElementById("skor-teks").innerHTML = "Skor: " + skor;
+                // Tambah kecepatan biar makin susah!
+                musuh.kecepatan += 0.2;
+            }
+
+            // Loncat & Gravitasi
+            if (pemain.loncat) {
+                pemain.y -= 5;
+                if (pemain.y < 80) pemain.loncat = false;
+            } else {
+                if (pemain.y < 150) pemain.y += 3;
+            }
+
+            // Cek Tabrakan (Collision)
+            if (pemain.x < musuh.x + musuh.lebar &&
+                pemain.x + pemain.lebar > musuh.x &&
+                pemain.y < musuh.y + musuh.tinggi &&
+                pemain.y + pemain.tinggi > musuh.y) {
+                gameSelesai = true;
+                alert("Game Over! Skor Akhir: " + skor);
+                location.reload(); // Ulang game
+            }
+
+            gambar();
+            requestAnimationFrame(update);
+        }
+
+        function gambar() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Gambar Pemain
+            ctx.fillStyle = "#007bff";
+            ctx.fillRect(pemain.x, pemain.y, pemain.lebar, pemain.tinggi);
+
+            // Gambar Musuh
+            ctx.fillStyle = "#ff4136";
+            ctx.fillRect(musuh.x, musuh.y, musuh.lebar, musuh.tinggi);
+
+            // Garis Tanah
+            ctx.strokeStyle = "#333";
+            ctx.beginPath();
+            ctx.moveTo(0, 185);
+            ctx.lineTo(600, 185);
+            ctx.stroke();
+        }
+
+        function lompat() {
+            if (pemain.y == 150) { // Hanya bisa lompat kalau di tanah
+                pemain.loncat = true;
+            }
+        }
+
+        // Jalankan game
+        update();
+    </script>
+</body>
+</html>
