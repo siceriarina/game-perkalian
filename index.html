@@ -1,100 +1,225 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-    <title>Game Lompat Kotak!</title>
-    <style>
-        body { text-align: center; font-family: Arial; background-color: #222; color: white; }
-        #gameCanvas {
-            border: 5px solid white;
-            background-color: #fff;
-            display: block;
-            margin: 20px auto;
-        }
-        h1 { color: #00d4ff; }
-    </style>
+<meta charset="UTF-8">
+<title>Game Perkalian</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #1e1e2f, #3a3a6a);
+        color: white;
+        text-align: center;
+        margin: 0;
+    }
+
+    .container {
+        max-width: 400px;
+        margin: auto;
+        padding: 20px;
+    }
+
+    .hud {
+        display: flex;
+        justify-content: space-between;
+        margin: 15px 0;
+        font-size: 14px;
+    }
+
+    .question {
+        font-size: 40px;
+        margin: 30px 0;
+        transition: transform 0.2s;
+    }
+
+    .shake {
+        animation: shake 0.3s;
+    }
+
+    @keyframes shake {
+        0% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        50% { transform: translateX(5px); }
+        75% { transform: translateX(-5px); }
+        100% { transform: translateX(0); }
+    }
+
+    .answers {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    button {
+        padding: 15px;
+        font-size: 18px;
+        border: none;
+        border-radius: 10px;
+        background: #00a8ff;
+        color: white;
+        cursor: pointer;
+        transition: transform 0.1s, background 0.2s;
+    }
+
+    button:active {
+        transform: scale(0.95);
+    }
+
+    .correct {
+        background: #4cd137 !important;
+    }
+
+    .wrong {
+        background: #e84118 !important;
+    }
+
+    .end {
+        display: none;
+    }
+
+    .big {
+        font-size: 24px;
+        margin: 10px 0;
+    }
+</style>
 </head>
-<body onclick="lompat()">
+<body>
 
-    <h1>Lompat Lewati Rintangan!</h1>
-    <p>Klik layar atau tekan tombol apa saja untuk melompat</p>
-    <canvas id="gameCanvas" width="600" height="200"></canvas>
-    <h2 id="skor-teks">Skor: 0</h2>
+<div class="container">
+    <h1>⚡ Math Combo</h1>
 
-    <script>
-        var canvas = document.getElementById("gameCanvas");
-        var ctx = canvas.getContext("2d");
+    <div id="game">
+        <div class="hud">
+            <div>📋 Soal: <span id="count">1</span>/10</div>
+            <div>🔥 Combo: <span id="combo">0</span></div>
+            <div>⭐ Skor: <span id="score">0</span></div>
+        </div>
 
-        // Data Karakter (Kotak Biru)
-        var pemain = { x: 50, y: 150, lebar: 30, tinggi: 30, loncat: false, gravitasi: 2 };
-        
-        // Data Rintangan (Kotak Merah)
-        var musuh = { x: 600, y: 160, lebar: 20, tinggi: 40, kecepatan: 5 };
-        
-        var skor = 0;
-        var gameSelesai = false;
+        <div class="question" id="question"></div>
+        <div class="answers" id="answers"></div>
+    </div>
 
-        function update() {
-            if (gameSelesai) return;
+    <div id="end" class="end">
+        <div class="big">Game Selesai 🎉</div>
+        <div>⏱ Waktu: <span id="finalTime"></span> detik</div>
+        <div>🏆 High Score: <span id="highScore"></span> detik</div>
+        <button onclick="startGame()">Main Lagi</button>
+    </div>
+</div>
 
-            // Gerakkan musuh ke kiri
-            musuh.x -= musuh.kecepatan;
-            if (musuh.x < -20) {
-                musuh.x = 600;
-                skor++;
-                document.getElementById("skor-teks").innerHTML = "Skor: " + skor;
-                // Tambah kecepatan biar makin susah!
-                musuh.kecepatan += 0.2;
-            }
+<!-- Sound -->
+<audio id="correctSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_5c1c7b3b7f.mp3"></audio>
+<audio id="wrongSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_d08f1b2c0c.mp3"></audio>
 
-            // Loncat & Gravitasi
-            if (pemain.loncat) {
-                pemain.y -= 5;
-                if (pemain.y < 80) pemain.loncat = false;
-            } else {
-                if (pemain.y < 150) pemain.y += 3;
-            }
+<script>
+let num1, num2, correctAnswer;
+let currentQuestion = 0;
+let totalQuestions = 10;
+let combo = 0;
+let score = 0;
+let startTime;
 
-            // Cek Tabrakan (Collision)
-            if (pemain.x < musuh.x + musuh.lebar &&
-                pemain.x + pemain.lebar > musuh.x &&
-                pemain.y < musuh.y + musuh.tinggi &&
-                pemain.y + pemain.tinggi > musuh.y) {
-                gameSelesai = true;
-                alert("Game Over! Skor Akhir: " + skor);
-                location.reload(); // Ulang game
-            }
+function startGame() {
+    currentQuestion = 0;
+    combo = 0;
+    score = 0;
 
-            gambar();
-            requestAnimationFrame(update);
+    document.getElementById("game").style.display = "block";
+    document.getElementById("end").style.display = "none";
+
+    startTime = new Date();
+
+    nextQuestion();
+    updateHUD();
+}
+
+function updateHUD() {
+    document.getElementById("count").textContent = currentQuestion;
+    document.getElementById("combo").textContent = combo;
+    document.getElementById("score").textContent = score;
+}
+
+function nextQuestion() {
+    currentQuestion++;
+
+    if (currentQuestion > totalQuestions) {
+        endGame();
+        return;
+    }
+
+    num1 = Math.floor(Math.random() * 9) + 1;
+    num2 = Math.floor(Math.random() * 9) + 1;
+    correctAnswer = num1 * num2;
+
+    document.getElementById("question").textContent = `${num1} × ${num2}`;
+
+    let answers = [correctAnswer];
+
+    while (answers.length < 4) {
+        let wrong = correctAnswer + Math.floor(Math.random() * 10) - 5;
+        if (wrong > 0 && !answers.includes(wrong)) {
+            answers.push(wrong);
         }
+    }
 
-        function gambar() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+    answers.sort(() => Math.random() - 0.5);
 
-            // Gambar Pemain
-            ctx.fillStyle = "#007bff";
-            ctx.fillRect(pemain.x, pemain.y, pemain.lebar, pemain.tinggi);
+    const container = document.getElementById("answers");
+    container.innerHTML = "";
 
-            // Gambar Musuh
-            ctx.fillStyle = "#ff4136";
-            ctx.fillRect(musuh.x, musuh.y, musuh.lebar, musuh.tinggi);
+    answers.forEach(ans => {
+        const btn = document.createElement("button");
+        btn.textContent = ans;
+        btn.onclick = () => selectAnswer(ans, btn);
+        container.appendChild(btn);
+    });
 
-            // Garis Tanah
-            ctx.strokeStyle = "#333";
-            ctx.beginPath();
-            ctx.moveTo(0, 185);
-            ctx.lineTo(600, 185);
-            ctx.stroke();
-        }
+    updateHUD();
+}
 
-        function lompat() {
-            if (pemain.y == 150) { // Hanya bisa lompat kalau di tanah
-                pemain.loncat = true;
-            }
-        }
+function selectAnswer(ans, btn) {
+    if (ans === correctAnswer) {
+        btn.classList.add("correct");
+        document.getElementById("correctSound").play();
 
-        // Jalankan game
-        update();
-    </script>
+        combo++;
+        score += 10 + combo * 2;
+    } else {
+        btn.classList.add("wrong");
+        document.getElementById("wrongSound").play();
+
+        combo = 0;
+        document.getElementById("question").classList.add("shake");
+        setTimeout(() => {
+            document.getElementById("question").classList.remove("shake");
+        }, 300);
+    }
+
+    updateHUD();
+    setTimeout(nextQuestion, 500);
+}
+
+function endGame() {
+    const endTime = new Date();
+    const totalTime = ((endTime - startTime) / 1000).toFixed(2);
+
+    document.getElementById("game").style.display = "none";
+    document.getElementById("end").style.display = "block";
+
+    document.getElementById("finalTime").textContent = totalTime;
+
+    let high = localStorage.getItem("mathBestTime");
+
+    if (!high || totalTime < high) {
+        localStorage.setItem("mathBestTime", totalTime);
+        high = totalTime;
+    }
+
+    document.getElementById("highScore").textContent = high;
+}
+
+// start pertama
+startGame();
+</script>
+
 </body>
 </html>
