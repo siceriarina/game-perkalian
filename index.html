@@ -87,10 +87,10 @@ button:hover {
 
 <script>
 // ================== SUPABASE SETUP ==================
-const supabaseUrl = "https://nomeqletxpgeerqwaljp.supabase.co/";
-const supabaseKey = "sb_publishable_2hE9utaePJLkFkbRUrm_ZA_u1m4NC3M";
+const supabaseUrl = "https://nomeqletxpgeerqwaljp.supabase.co";
+const supabaseKey = "sb_publishable_2hE9utaePJLkFkbRUrm_ZA_u1m4NC3M"; 
 
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
 // ================== GAME ==================
 let num1, num2, correct;
@@ -178,7 +178,7 @@ async function saveScore() {
     const name = document.getElementById("playerName").value || "Anonim";
     const time = parseFloat(document.getElementById("finalTime").textContent);
 
-    await supabase.from("scores").insert([
+    await supabaseClient.from("scores").insert([
         { name, time }
     ]);
 
@@ -186,7 +186,7 @@ async function saveScore() {
 }
 
 async function loadLeaderboard() {
-    const { data } = await supabase
+    const { data } = await supabaseClient
         .from("scores")
         .select("*")
         .order("time", { ascending: true })
